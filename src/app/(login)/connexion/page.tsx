@@ -1,55 +1,82 @@
 "use client";
-
-import {useForm} from "@mantine/form";
-import {PasswordInput, TextInput, Box} from "@mantine/core";
-import {Button} from "tp-kit/components";
-import * as z from "zod";
+import React, {useCallback, useState} from 'react';
+import { useForm, zodResolver } from '@mantine/form';
+import { z } from 'zod';
+import { TextInput, PasswordInput, Box } from '@mantine/core';
+import {Button, NoticeMessage, NoticeMessageData} from 'tp-kit/components';
+import {ProductFiltersResult} from "../../../types";
+import {variant} from "@mantine/styles/lib/theme/functions/fns/variant/variant";
 
 const schema = z.object({
-    email: z.string().email(),
-    password: z.string().min(6),
+    email: z.string().email({ message: 'L\'email doit être au format valide' }),
+    password: z.string().min(6, { message: 'Le mot de passe doit faire au moins 6 caractères' }),
 });
 
-type FormValues = z.infer<typeof schema>;
-
-type schema = {
-    email: string;
-    password: string;
-}
 
 
-export default function Connexion(){
-  const form = useForm(
-    {
-      initialValues: {
-        email: "",
-        password: ""
-      },
+const Connexion = () => {
+
+    const [notices, setNotices] = useState<NoticeMessageData[]>([]);
+
+    function addError() {
+        setNotices(n => [...n, { type: "error", message: "Erreur de connexion" }]);
     }
-  );
 
-  return (
-      <Box maw={340} mx="auto">
-          <form onSubmit={form.onSubmit((values)=>console.log(values))} className="space-y-8 mt-16">
-              <TextInput
-                withAsterisk
-                variant="filled"
-                label="Adresse e-mail"
-                placeholder="Entrez votre adresse e-mail"
-                {...form.getInputProps("email")}
-              />
+    function addSuccess() {
+        setNotices(n => [...n, { type: "success", message: "Connexion réussi" }]);
+    }
 
-              <PasswordInput
-                withAsterisk
-                variant="filled"
-                label="Mot de passe"
-                placeholder="Entrez votre mot de passe"
-                {...form.getInputProps("password")}
-              />
+    function removeNotice(index) {
+        setNotices(n => {
+            delete(n[index]);
+            return Object.values(n);
+        });
+    }
 
-              <Button variant="primary" type="submit">Se connecter</Button>
-              <Button variant="ghost" type="button">Créer un compte</Button>
-          </form>
-      </Box>
-  );
-}
+    const form = useForm({
+        validate: zodResolver(schema),
+        initialValues: {
+            email: '',
+            password: '',
+        },
+    });
+
+
+    return (
+        <Box maw={340} mx="auto">
+            <ul>
+                {notices.map((notice, i) => <NoticeMessage
+                    key={i}
+                    {...notice}
+                    onDismiss={() => removeNotice(i)}
+                />)}
+            </ul>
+            <form  onSubmit={form.onSubmit((values) => console.log(values))} className="space-y-8 mt-16">
+                <TextInput
+                    withAsterisk
+                    label="Adresse email"
+                    placeholder="lin.guini@barilla.it..."
+                    {...form.getInputProps('email')}
+                />
+                <PasswordInput
+                    withAsterisk
+                    label="Mot de passe"
+                    placeholder="Ke$$a..."
+                    {...form.getInputProps('password')}
+                />
+                <div>
+                    <Button type="submit" fullWidth onClick={addError}>
+                        Se connecter
+                    </Button>
+                    <Button type="button" fullWidth variant="ghost" onClick={() => {
+                        window.location.href = "/inscription"
+                    }}>
+                        Créer un compte
+                    </Button>
+                </div>
+            </form>
+        </Box>
+    );
+};
+
+export default Connexion;
