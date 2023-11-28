@@ -26,6 +26,7 @@ const Connexion = () => {
         setNotices(n => [...n, { type: "success", message: "Connexion réussi" }]);
     }
 
+
     function removeNotice(index) {
         setNotices(n => {
             delete(n[index]);
