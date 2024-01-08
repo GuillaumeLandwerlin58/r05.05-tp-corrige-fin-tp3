@@ -6,6 +6,8 @@ import { OrderTable } from "../../components/order-table";
 export default async function Layout({ children }: { children: ReactNode }) {
   const orders = await prisma.order.findMany();
 
+
+
   return (
     <>
       {/* Orders list */}

@@ -1,8 +1,9 @@
 "use client";
 
 import { Fragment, ReactNode, useCallback } from "react";
-import { Dialog, Transition } from "@headlessui/react";
-import { useRouter } from "next/navigation";
+import Dialog from "../../../../../node_modules/@headlessui/react/dist/components/dialog/dialog";
+import Transition from "../../../../../node_modules/@headlessui/react/dist/components/transition/transition";
+import { useRouter } from "../../../../../node_modules/next/router";
 
 export default function Layout ({children}: {children: ReactNode}) {
   const router = useRouter();

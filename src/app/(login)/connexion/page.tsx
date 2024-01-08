@@ -1,99 +1,110 @@
-"use client";
+'use client';
 
-import React, {useCallback, useState} from 'react';
-import { useForm, zodResolver } from '@mantine/form';
 import { z } from 'zod';
-import { TextInput, PasswordInput, Box } from '@mantine/core';
-import {Button, NoticeMessage, NoticeMessageData} from 'tp-kit/components';
-
-import {createClientComponentClient} from '@supabase/auth-helpers-nextjs'
+import {useForm, zodResolver} from "@mantine/form";
+import {PasswordInput, TextInput} from "@mantine/core";
+import {Box} from "@mantine/core";
+import React, {useEffect, useState} from "react";
+import {Button, NoticeMessage, useZodI18n} from "tp-kit/components";
 import {useRouter} from "next/navigation";
-
-
-import {ProductFiltersResult} from "../../../types";
-import {variant} from "@mantine/styles/lib/theme/functions/fns/variant/variant";
+import {createClientComponentClient} from "@supabase/auth-helpers-nextjs";
+import {getUser} from "../../../utils/supabase";
 
 const schema = z.object({
-    email: z.string().email({ message: 'L\'email doit être au format valide' }),
-    password: z.string().min(6, { message: 'Le mot de passe doit faire au moins 6 caractères' }),
+    email: z.string().email().nonempty(),
+    password: z.string().min(6)
 });
 
-const Connexion = () => {
+type FormValues = z.infer<typeof schema>;
 
-    const [notices, setNotices] = useState<NoticeMessageData[]>([]);
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const router = useRouter()
-    const supabase = createClientComponentClient()
-
-    function addError() {
-        setNotices(n => [...n, { type: "error", message: "Erreur de connexion" }]);
-    }
-
-    function addSuccess() {
-        setNotices(n => [...n, { type: "success", message: "Connexion réussi" }]);
-    }
-
-
-    function removeNotice(index) {
-        setNotices(n => {
-            delete(n[index]);
-            return Object.values(n);
-        });
-    }
-
-    const form = useForm({
-        validate: zodResolver(schema),
+export default function Connexion(){
+    useZodI18n(z);
+    const form = useForm<FormValues>({
         initialValues: {
             email: '',
             password: '',
         },
+
+        validate: zodResolver(schema),
     });
 
-    const handleSignIn = async () => {
-        await supabase.auth.signInWithPassword({
-            email,
-            password
-        })
-        router.refresh()
-    }
+    const supabase = createClientComponentClient();
 
+    const [created, setCreated] = useState(false);
+    const [isValid, setIsValid] = useState(false);
+    const [message, setMessage] = useState("");
+
+    const router = useRouter();
+
+    useEffect(() => {
+        getUser(supabase).then((user) => {
+            if (user.session) {
+                router.push('/mon-compte')
+            }
+        });
+    }, []);
+
+    const handleSubmit = async (values: FormValues) => {
+        const { error } = await supabase.auth.signInWithPassword(
+            {
+                email: values.email,
+                password: values.password,
+            }
+        )
+
+        if (!error) {
+            router.push('/')
+        }
+
+        console.log(error)
+        setCreated(true);
+        setMessage((error) ? error.message : "Vous êtes connecté")
+        setIsValid((!error))
+    }
 
     return (
         <Box maw={340} mx="auto">
-            <ul>
-                {notices.map((notice, i) => <NoticeMessage
-                    key={i}
-                    {...notice}
-                    onDismiss={() => removeNotice(i)}
-                />)}
-            </ul>
-            <form  onSubmit={form.onSubmit(handleSignIn)} className="space-y-8 mt-16">
-                <TextInput
-                    withAsterisk
-                    label="Adresse email"
-                    placeholder="lin.guini@barilla.it..."
-                    {...form.getInputProps('email')}
-                />
-                <PasswordInput
-                    withAsterisk
-                    label="Mot de passe"
-                    placeholder="Ke$$a..."
-                    {...form.getInputProps('password')}
-                />
-                <div>
-                    <Button type="submit" fullWidth>
-                        Se connecter
-                    </Button>
-                    <Button type="button" fullWidth variant="ghost" onClick={() => {
-                        window.location.href = "/inscription"
-                    }}>
-                        Créer un compte
-                    </Button>
-                </div>
-            </form>
-        </Box>
-    );
-};
+        <form
+            className="flex items-center flex-col space-y-6 w-"
+            onSubmit={form.onSubmit((values) => handleSubmit(values))}
+        >
+            <p
+                className="text-left w-full text-2xl"
+            >
+                Connexion
+            </p>
 
-export default Connexion;
+            {
+                created &&
+                <NoticeMessage
+                    type={isValid ? "success" : "error"}
+                    message={message}
+                />
+            }
+
+            <TextInput
+                className="w-full"
+                required
+                label="Adresse email"
+                {...form.getInputProps('email')}
+            />
+
+            <PasswordInput
+                className="w-full"
+                required
+                label="Mot de passe"
+                {...form.getInputProps('password')}
+            />
+
+            <Button
+                className="w-full cursor-pointer"
+                type="submit"
+            >
+                Se connecter
+            </Button>
+
+            <a onClick={() => router.push('/inscription')} className="">Créer un compte</a>
+        </form>
+    </Box>
+    );
+}

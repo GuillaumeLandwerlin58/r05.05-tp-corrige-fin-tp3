@@ -1,122 +1,122 @@
-"use client";
-import {PRODUCTS_CATEGORY_DATA} from "tp-kit/data";
-import {Button, NoticeMessage, NoticeMessageData, SectionContainer} from "tp-kit/components";
-import {z} from 'zod';
-import {useForm, zodResolver} from '@mantine/form';
-import {PasswordInput, TextInput, Box, Group} from '@mantine/core';
-import React, {useState} from "react";
+'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useRouter } from 'next/navigation';
+import {z} from "zod";
+import {useForm, zodResolver} from "@mantine/form";
+import {PasswordInput, TextInput} from "@mantine/core";
+import {Button, NoticeMessage, useZodI18n} from "tp-kit/components";
+import {useRouter} from "next/navigation";
+import React, {useEffect, useState} from "react";
+import {createClientComponentClient} from "@supabase/auth-helpers-nextjs";
+import {getUser} from "../../../utils/supabase";
 
 const schema = z.object({
-    name: z.string().min(2, {message: 'Le nom ne doit pas être vide'}),
-    email: z.string().email({message: 'Format invalide'}),
-    password: z.string().min(6, {message: 'Le mot de passe doit contenir au moins 6 caractères'}),
+    name: z.string().nonempty(),
+    email: z.string().email().nonempty(),
+    password: z.string().min(6),
 });
 
+type FormValues = z.infer<typeof schema>;
 
-const Inscription = () => {
-
-    const [notices, setNotices] = useState<NoticeMessageData[]>([]);
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const router = useRouter()
-    const supabase = createClientComponentClient()
-
-    function addError(string: string) {
-        setNotices(n => [...n, {type: "error", message: string}]);
-    }
-
-    function addSuccess() {
-        setNotices(n => [...n, {type: "success", message: "Inscription réussi"}]);
-    }
-
-    function removeNotice(index) {
-        setNotices(n => {
-            delete (n[index]);
-            return Object.values(n);
-        });
-    }
-
-    const form = useForm({
-        validate: zodResolver(schema),
+export default function Inscription(){
+    useZodI18n(z);
+    const form = useForm<FormValues>({
         initialValues: {
             name: '',
             email: '',
             password: '',
         },
+
+        validate: zodResolver(schema),
     });
 
-    const handleSignUp = async () => {
-        try {
-            const res = await supabase.auth.signUp({
-                email: form.values.email,
-                password: form.values.password,
-                options: {
-                    emailRedirectTo: `${location.origin}/auth/callback`,
-                },
-            });
-            const error = res.error;
-            console.log(res);
-            if (error) {
-                addError(res.error.message);
-                console.log('Erreur lors de l\'inscription : ', error)
-            } else {
-                addSuccess();
-                console.log('Inscription réussi')
-                //router.refresh();
+    useEffect(() => {
+        getUser(supabase).then((user) => {
+            if (user.session) {
+                router.push('/mon-compte')
             }
-        } catch (error) {
-            console.error('Erreur lors de l\'inscription : ', error);
-            addError(error.message);
-        }
-    };
+        });
+    }, []);
+
+    const supabase = createClientComponentClient();
+
+    const router = useRouter();
+
+    const [created, setCreated] = useState(false);
+    const [isValid, setIsValid] = useState(false);
+    const [message, setMessage] = useState("");
+
+    const handleSubmit = async (values: FormValues) => {
+        const { error } = await supabase.auth.signUp(
+            {
+                email: values.email,
+                password: values.password,
+                options: {
+                    emailRedirectTo: 'http://localhost:3000/api/auth/callback',
+                    data: {
+                        name: values.name
+                    }
+                }
+            }
+        )
+
+        console.log(error)
+        setCreated(true);
+        setMessage((error) ? error.message : "Votre inscription a bien été prise en compte. Validez votre adresse email pour vous connecter")
+        setIsValid((!error))
+    }
 
     return (
-            <Box maw={340} mx="auto">
-                <ul>
-                    {notices.map((notice, i) => <NoticeMessage
-                        key={i}
-                        {...notice}
-                        onDismiss={() => removeNotice(i)}
-                    />)}
-                </ul>
-                <form  onSubmit={form.onSubmit(handleSignUp)} className="space-y-8 mt-16">
-                    <TextInput
-                        withAsterisk
-                        label="Name"
-                        description="Le nom qui sera utilisé pour vos commandes"
-                        placeholder="Michel"
-                        mt="sm"
-                        {...form.getInputProps('name')}
+        <Box maw={340} mx="auto">
+            <form
+                className="flex items-center flex-col space-y-6 w-"
+                onSubmit={form.onSubmit((values) => handleSubmit(values))}
+            >
+                <p
+                    className="text-left w-full text-2xl"
+                >
+                    Inscription
+                </p>
+
+                {
+                    created &&
+                    <NoticeMessage
+                        className="w-full"
+                        type={isValid ? "success" : "error"}
+                        message={message}
                     />
-                    <TextInput
-                        withAsterisk
-                        label="Email"
-                        placeholder="example@mail.com"
-                        {...form.getInputProps('email')}
-                    />
-                    <PasswordInput
-                        withAsterisk
-                        label="Password"
-                        placeholder={"Ke$$a..."}
-                        {...form.getInputProps('password')}
-                    />
-                    <div>
-                        <Button type="submit" fullWidth>
-                            S'inscrire
-                        </Button>
-                        <Button variant={"outline"} fullWidth variant="ghost"
-                                onClick={() => {
-                                    window.location.href = "/connexion"
-                                }}>
-                            Déjà un compte ? Se connecter
-                        </Button>
-                    </div>
-                </form>
-            </Box>
+                }
+
+                <TextInput
+                    className="w-full"
+                    required
+                    label="Nom"
+                    description="Le nom qui sera utilisé pour vos commandes"
+                    {...form.getInputProps('name')}
+                />
+
+                <TextInput
+                    className="w-full"
+                    required
+                    label="Adresse email"
+                    {...form.getInputProps('email')}
+                />
+
+                <PasswordInput
+                    className="w-full"
+                    required
+                    label="Mot de passe"
+                    {...form.getInputProps('password')}
+                />
+
+                <Button
+                    className="w-full cursor-pointer"
+                    type="submit"
+                >
+                    S'inscrire
+                </Button>
+
+                <a onClick={() => router.push('/connexion')} className="">Déjà un compte ? Se connecter</a>
+            </form>
+        </Box>
     );
 }
-
-export default Inscription;

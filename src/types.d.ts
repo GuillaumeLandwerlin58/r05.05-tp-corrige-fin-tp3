@@ -5,6 +5,12 @@ export type ProductFiltersResult = {
   search?: string,
 };
 
+declare module "@supabase/supabase-js" {
+  export interface UserMetadata {
+    name?: string
+  }
+}
+
 export type NextPageProps<T = Record<string, string>> = {
   /**
    * The path parameters received 
@@ -23,13 +29,8 @@ export type ProductLineData = {
   qty: number
 };
 
+
 export type CartData = {
   lines: ProductLineData[],
   count: number,
-}
-
-declare module "@supabase/supabase-js" {
-  export interface UserMetadata {
-    name?: string
-  }
 }
