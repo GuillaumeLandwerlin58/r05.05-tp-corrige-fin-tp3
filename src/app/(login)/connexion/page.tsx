@@ -39,7 +39,8 @@ export default function Connexion(){
     useEffect(() => {
         getUser(supabase).then((user) => {
             if (user.session) {
-                router.push('/mon-compte')
+                router.refresh();
+                router.push('/mon-compte');
             }
         });
     }, []);
@@ -53,7 +54,8 @@ export default function Connexion(){
         )
 
         if (!error) {
-            router.push('/')
+            router.refresh();
+            router.push('/mon-compte')
         }
 
         console.log(error)
