@@ -14,7 +14,9 @@ export default function Page() {
 
   useEffect(() => {
     getUser(supabase).then((user) => {
+      // @ts-ignore
       if (user.session) {
+        // @ts-ignore
         setUser(user.session)
       } else {
         router.push('/connexion')

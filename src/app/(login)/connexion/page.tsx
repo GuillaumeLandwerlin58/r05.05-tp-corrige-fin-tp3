@@ -38,7 +38,7 @@ export default function Connexion(){
 
     useEffect(() => {
         getUser(supabase).then((user) => {
-            if (user.session) {
+            if (user) {
                 router.refresh();
                 router.push('/mon-compte');
             }

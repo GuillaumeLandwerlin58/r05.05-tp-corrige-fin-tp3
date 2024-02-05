@@ -12,6 +12,7 @@ import {createClientComponentClient} from "@supabase/auth-helpers-nextjs";
 type Props = {};
 
 const Menu: FC<Props> = memo(function () {
+    // @ts-ignore
     const [user, setUser] = useState<User | null>(null);
     const supabase = createClientComponentClient();
 

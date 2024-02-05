@@ -21,7 +21,7 @@ const Cart: FC<Props> = memo(function () {
   const supabase = createClientComponentClient();
 
   const handleCreateOrder = useCallback(async () => {
-    const user = getUser(supabase);
+    const user = await getUser(supabase);
     const res = await createOrder(useCart.getState(), user);
     if (res.success) {
         clearCart();
@@ -56,7 +56,7 @@ const Cart: FC<Props> = memo(function () {
                     <NoticeMessage
                         type={notice.type}
                         message={notice.message}
-                        onClose={() => setNotices(n => n.filter((_, j) => j !== i))}
+                        onDismiss={() => setNotices(n => n.filter((_, j) => j !== i))}
                     />
             ))}
         </ul>

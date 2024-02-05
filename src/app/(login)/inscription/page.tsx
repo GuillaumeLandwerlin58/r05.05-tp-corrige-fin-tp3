@@ -2,7 +2,7 @@
 
 import {z} from "zod";
 import {useForm, zodResolver} from "@mantine/form";
-import {PasswordInput, TextInput} from "@mantine/core";
+import {Box, PasswordInput, TextInput} from "@mantine/core";
 import {Button, NoticeMessage, useZodI18n} from "tp-kit/components";
 import {useRouter} from "next/navigation";
 import React, {useEffect, useState} from "react";
@@ -31,7 +31,7 @@ export default function Inscription(){
 
     useEffect(() => {
         getUser(supabase).then((user) => {
-            if (user.session) {
+            if (user) {
                 router.push('/mon-compte')
             }
         });
